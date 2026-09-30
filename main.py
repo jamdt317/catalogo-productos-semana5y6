@@ -76,6 +76,7 @@ def main(page: ft.Page):
             ft.DataColumn(ft.Text("Nombre")),
             ft.DataColumn(ft.Text("Precio")),
             ft.DataColumn(ft.Text("Categoría")),
+            ft.DataColumn(ft.Text("Acción")),
         ],
         rows=[]
     )
@@ -90,8 +91,13 @@ def main(page: ft.Page):
                         ft.DataCell(ft.Text(prod.nombre)),
                         ft.DataCell(ft.Text(f"${prod.precio:.2f}")),
                         ft.DataCell(ft.Text(prod.categoria)),
-                    ],
-                    on_select_changed=lambda e, p=prod: cargar_datos_seleccionados(p)
+                        ft.DataCell(
+                            ft.Button(
+                                "Seleccionar", 
+                                on_click=lambda e, p=prod: cargar_datos_seleccionados(p)
+                            )
+                        ),
+                    ]
                 )
             )
         page.update()
@@ -109,7 +115,7 @@ def main(page: ft.Page):
         txt_precio.value = ""
         txt_categoria.value = ""
 
-    def mostrar_alerta(mensaje: str, es_error: bool = False):
+    def mostrar_alerta(mensaje: str):
         snack = ft.SnackBar(ft.Text(mensaje))
         page.overlay.append(snack)
         snack.open = True
@@ -132,7 +138,7 @@ def main(page: ft.Page):
     def btn_agregar_click(e):
         valido, msg = validar_entradas()
         if not valido:
-            mostrar_alerta(msg, es_error=True)
+            mostrar_alerta(msg)
             return
 
         prod = Producto(txt_id.value.strip(), txt_nombre.value.strip(), float(txt_precio.value), txt_categoria.value.strip())
@@ -141,12 +147,12 @@ def main(page: ft.Page):
             limpiar_campos()
             refrescar_tabla()
         else:
-            mostrar_alerta("Error: El ID ya existe.", es_error=True)
+            mostrar_alerta("Error: El ID ya existe.")
 
     def btn_actualizar_click(e):
         valido, msg = validar_entradas()
         if not valido:
-            mostrar_alerta(msg, es_error=True)
+            mostrar_alerta(msg)
             return
 
         prod = Producto(txt_id.value.strip(), txt_nombre.value.strip(), float(txt_precio.value), txt_categoria.value.strip())
@@ -155,12 +161,12 @@ def main(page: ft.Page):
             limpiar_campos()
             refrescar_tabla()
         else:
-            mostrar_alerta("Error: El producto no existe.", es_error=True)
+            mostrar_alerta("Error: El producto no existe.")
 
     def btn_eliminar_click(e):
         id_prod = txt_id.value.strip()
         if not id_prod:
-            mostrar_alerta("Ingrese el ID del producto a eliminar.", es_error=True)
+            mostrar_alerta("Ingrese el ID del producto a eliminar.")
             return
 
         if catalogo.eliminar(id_prod):
@@ -168,9 +174,9 @@ def main(page: ft.Page):
             limpiar_campos()
             refrescar_tabla()
         else:
-            mostrar_alerta("Error: ID no encontrado.", es_error=True)
+            mostrar_alerta("Error: ID no encontrado.")
 
-    # Organización de componentes visuales (Sintaxis universal para Flet)
+    # Organización de componentes visuales
     page.add(
         ft.Text("Catálogo de Productos", size=24, weight=ft.FontWeight.BOLD),
         ft.Row([txt_id, txt_nombre]),
@@ -187,7 +193,7 @@ def main(page: ft.Page):
     )
 
 if __name__ == "__main__":
-    if hasattr(ft, "app"):
-        ft.app(target=main)
-    else:
+    if hasattr(ft, "run"):
         ft.run(main)
+    else:
+        ft.app(target=main)
