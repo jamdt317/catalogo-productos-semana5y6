@@ -1,7 +1,62 @@
 import flet as ft
-from modelo.producto import Producto
-from servicio.catalogo import CatalogoProductos
 
+# ==========================================
+# 1. MODELO (Clase Producto)
+# ==========================================
+class Producto:
+    def __init__(self, id_producto: str, nombre: str, precio: float, categoria: str):
+        self.id_producto = id_producto
+        self.nombre = nombre
+        self.precio = precio
+        self.categoria = categoria
+
+    def __hash__(self):
+        return hash(self.id_producto)
+
+    def __eq__(self, other):
+        if isinstance(other, Producto):
+            return self.id_producto == other.id_producto
+        return False
+
+
+# ==========================================
+# 2. SERVICIO (Colecciones y Operaciones CRUD)
+# ==========================================
+class CatalogoProductos:
+    def __init__(self):
+        self._productos_dict: dict[str, Producto] = {}
+        self._ids_unicos: set[str] = set()
+
+    def agregar(self, producto: Producto) -> bool:
+        if producto.id_producto in self._ids_unicos:
+            return False
+        self._ids_unicos.add(producto.id_producto)
+        self._productos_dict[producto.id_producto] = producto
+        return True
+
+    def buscar(self, id_producto: str) -> Producto | None:
+        return self._productos_dict.get(id_producto)
+
+    def listar(self) -> list[Producto]:
+        return list(self._productos_dict.values())
+
+    def actualizar(self, producto: Producto) -> bool:
+        if producto.id_producto not in self._ids_unicos:
+            return False
+        self._productos_dict[producto.id_producto] = producto
+        return True
+
+    def eliminar(self, id_producto: str) -> bool:
+        if id_producto in self._ids_unicos:
+            self._ids_unicos.remove(id_producto)
+            del self._productos_dict[id_producto]
+            return True
+        return False
+
+
+# ==========================================
+# 3. INTERFAZ GRÁFICA Y MANEJO DE EVENTOS
+# ==========================================
 def main(page: ft.Page):
     page.title = "Gestión de Catálogo de Productos"
     page.padding = 20
@@ -55,8 +110,7 @@ def main(page: ft.Page):
         txt_categoria.value = ""
 
     def mostrar_alerta(mensaje: str, es_error: bool = False):
-        color = ft.Colors.RED_400 if es_error else ft.Colors.GREEN_400
-        snack = ft.SnackBar(ft.Text(mensaje), bg_color=color)
+        snack = ft.SnackBar(ft.Text(mensaje))
         page.overlay.append(snack)
         snack.open = True
         page.update()
@@ -74,7 +128,7 @@ def main(page: ft.Page):
             return False, "El precio debe ser un número válido."
         return True, ""
 
-    # Manejo de Eventos CRUD
+    # Controladores de Eventos (Botones)
     def btn_agregar_click(e):
         valido, msg = validar_entradas()
         if not valido:
@@ -116,20 +170,24 @@ def main(page: ft.Page):
         else:
             mostrar_alerta("Error: ID no encontrado.", es_error=True)
 
-    # Controles de la Interfaz
+    # Organización de componentes visuales (Sintaxis universal para Flet)
     page.add(
-        ft.Text("Catálogo de Productos", style=ft.TextThemeStyle.HEADLINE_MEDIUM),
+        ft.Text("Catálogo de Productos", size=24, weight=ft.FontWeight.BOLD),
         ft.Row([txt_id, txt_nombre]),
         ft.Row([txt_precio, txt_categoria]),
         ft.Row([
-            ft.ElevatedButton("Agregar", on_click=btn_agregar_click, icon=ft.Icons.ADD),
-            ft.ElevatedButton("Actualizar", on_click=btn_actualizar_click, icon=ft.Icons.UPDATE),
-            ft.ElevatedButton("Eliminar", on_click=btn_eliminar_click, icon=ft.Icons.DELETE),
-            ft.OutlinedButton("Limpiar Formulario", on_click=lambda _: (limpiar_campos(), page.update())),
+            ft.Button("Agregar", on_click=btn_agregar_click),
+            ft.Button("Actualizar", on_click=btn_actualizar_click),
+            ft.Button("Eliminar", on_click=btn_eliminar_click),
+            ft.Button("Limpiar Formulario", on_click=lambda _: (limpiar_campos(), page.update())),
         ]),
         ft.Divider(),
-        ft.Text("Listado de Productos (Haz clic en una fila para editar):"),
+        ft.Text("Listado de Productos:"),
         tabla
     )
 
-ft.app(target=main)
+if __name__ == "__main__":
+    if hasattr(ft, "app"):
+        ft.app(target=main)
+    else:
+        ft.run(main)
